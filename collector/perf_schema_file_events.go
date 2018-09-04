@@ -49,6 +49,11 @@ func (ScrapePerfFileEvents) Help() string {
 	return "Collect metrics from performance_schema.file_summary_by_event_name"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapePerfFileEvents) Version() float64 {
+	return 5.6
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapePerfFileEvents) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	// Timers here are returned in picoseconds.
@@ -108,3 +113,6 @@ func (ScrapePerfFileEvents) Scrape(db *sql.DB, ch chan<- prometheus.Metric) erro
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapePerfFileEvents{}

@@ -59,6 +59,11 @@ func (ScrapePerfFileInstances) Help() string {
 	return "Collect metrics from performance_schema.file_summary_by_instance"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapePerfFileInstances) Version() float64 {
+	return 5.5
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapePerfFileInstances) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	// Timers here are returned in picoseconds.
@@ -104,3 +109,6 @@ func (ScrapePerfFileInstances) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapePerfFileInstances{}

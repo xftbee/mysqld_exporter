@@ -98,6 +98,11 @@ func (ScrapeQueryResponseTime) Help() string {
 	return "Collect query response time distribution if query_response_time_stats is ON."
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapeQueryResponseTime) Version() float64 {
+	return 5.5
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeQueryResponseTime) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	var queryStats uint8
@@ -121,3 +126,6 @@ func (ScrapeQueryResponseTime) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapeQueryResponseTime{}

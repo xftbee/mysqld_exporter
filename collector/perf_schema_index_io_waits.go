@@ -43,6 +43,11 @@ func (ScrapePerfIndexIOWaits) Help() string {
 	return "Collect metrics from performance_schema.table_io_waits_summary_by_index_usage"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapePerfIndexIOWaits) Version() float64 {
+	return 5.6
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapePerfIndexIOWaits) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	perfSchemaIndexWaitsRows, err := db.Query(perfIndexIOWaitsQuery)
@@ -106,3 +111,6 @@ func (ScrapePerfIndexIOWaits) Scrape(db *sql.DB, ch chan<- prometheus.Metric) er
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapePerfIndexIOWaits{}

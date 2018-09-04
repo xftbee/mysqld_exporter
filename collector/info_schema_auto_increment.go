@@ -49,6 +49,11 @@ func (ScrapeAutoIncrementColumns) Help() string {
 	return "Collect auto_increment columns and max values from information_schema"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapeAutoIncrementColumns) Version() float64 {
+	return 5.1
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeAutoIncrementColumns) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	autoIncrementRows, err := db.Query(infoSchemaAutoIncrementQuery)
@@ -79,3 +84,6 @@ func (ScrapeAutoIncrementColumns) Scrape(db *sql.DB, ch chan<- prometheus.Metric
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapeAutoIncrementColumns{}

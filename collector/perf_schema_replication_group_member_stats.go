@@ -49,6 +49,11 @@ func (ScrapePerfReplicationGroupMemberStats) Help() string {
 	return "Collect metrics from performance_schema.replication_group_member_stats"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapePerfReplicationGroupMemberStats) Version() float64 {
+	return 5.7
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapePerfReplicationGroupMemberStats) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	perfReplicationGroupMemeberStatsRows, err := db.Query(perfReplicationGroupMemeberStatsQuery)
@@ -89,3 +94,6 @@ func (ScrapePerfReplicationGroupMemberStats) Scrape(db *sql.DB, ch chan<- promet
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapePerfReplicationGroupMemberStats{}

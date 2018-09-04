@@ -10,7 +10,7 @@ import (
 
 const innodbCmpMemQuery = `
                 SELECT
-                  page_size, buffer_pool_instance, pages_used, pages_free, relocation_ops, relocation_time 
+                  page_size, buffer_pool_instance, pages_used, pages_free, relocation_ops, relocation_time
                   FROM information_schema.innodb_cmpmem
                 `
 
@@ -51,9 +51,13 @@ func (ScrapeInnodbCmpMem) Help() string {
 	return "Collect metrics from information_schema.innodb_cmpmem"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapeInnodbCmpMem) Version() float64 {
+	return 5.5
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeInnodbCmpMem) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
-
 	informationSchemaInnodbCmpMemRows, err := db.Query(innodbCmpMemQuery)
 	if err != nil {
 		return err
@@ -76,7 +80,9 @@ func (ScrapeInnodbCmpMem) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error 
 		ch <- prometheus.MustNewConstMetric(infoSchemaInnodbCmpMemPagesFree, prometheus.CounterValue, pages_free, page_size, buffer_pool)
 		ch <- prometheus.MustNewConstMetric(infoSchemaInnodbCmpMemRelocationOps, prometheus.CounterValue, relocation_ops, page_size, buffer_pool)
 		ch <- prometheus.MustNewConstMetric(infoSchemaInnodbCmpMemRelocationTime, prometheus.CounterValue, (relocation_time / 1000), page_size, buffer_pool)
-
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapeInnodbCmpMem{}

@@ -51,6 +51,11 @@ func (ScrapeTableStat) Help() string {
 	return "If running with userstat=1, set to true to collect table statistics"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapeTableStat) Version() float64 {
+	return 5.1
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeTableStat) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	var varName, varVal string
@@ -104,3 +109,6 @@ func (ScrapeTableStat) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapeTableStat{}

@@ -61,6 +61,11 @@ func (ScrapeInnodbMetrics) Help() string {
 	return "Collect metrics from information_schema.innodb_metrics"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapeInnodbMetrics) Version() float64 {
+	return 5.6
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeInnodbMetrics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	innodbMetricsRows, err := db.Query(infoSchemaInnodbMetricsQuery)
@@ -150,3 +155,6 @@ func (ScrapeInnodbMetrics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapeInnodbMetrics{}

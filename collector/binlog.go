@@ -50,6 +50,11 @@ func (ScrapeBinlogSize) Help() string {
 	return "Collect the current size of all registered binlog files"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapeBinlogSize) Version() float64 {
+	return 5.1
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeBinlogSize) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	var logBin uint8
@@ -99,3 +104,6 @@ func (ScrapeBinlogSize) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapeBinlogSize{}

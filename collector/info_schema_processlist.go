@@ -61,10 +61,10 @@ var (
 		"deleting":                  uint32(0),
 		"executing":                 uint32(0),
 		"execution of init_command": uint32(0),
-		"end":                     uint32(0),
-		"freeing items":           uint32(0),
-		"flushing tables":         uint32(0),
-		"fulltext initialization": uint32(0),
+		"end":                       uint32(0),
+		"freeing items":             uint32(0),
+		"flushing tables":           uint32(0),
+		"fulltext initialization":   uint32(0),
 		"idle":                      uint32(0),
 		"init":                      uint32(0),
 		"killed":                    uint32(0),
@@ -99,8 +99,8 @@ var (
 		"other":                     uint32(0),
 	}
 	threadStateMapping = map[string]string{
-		"user sleep":                               "idle",
-		"creating index":                           "altering table",
+		"user sleep":     "idle",
+		"creating index": "altering table",
 		"committing alter table to storage engine": "altering table",
 		"discard or import tablespace":             "altering table",
 		"rename":                                   "altering table",
@@ -132,6 +132,11 @@ func (ScrapeProcesslist) Name() string {
 // Help describes the role of the Scraper.
 func (ScrapeProcesslist) Help() string {
 	return "Collect current thread state counts from the information_schema.processlist"
+}
+
+// Version of MySQL from which scraper is available.
+func (ScrapeProcesslist) Version() float64 {
+	return 5.1
 }
 
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
@@ -207,3 +212,6 @@ func deriveThreadState(command string, state string) string {
 	}
 	return "other"
 }
+
+// check interface
+var _ Scraper = ScrapeProcesslist{}

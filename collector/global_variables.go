@@ -31,6 +31,11 @@ func (ScrapeGlobalVariables) Help() string {
 	return "Collect from SHOW GLOBAL VARIABLES"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapeGlobalVariables) Version() float64 {
+	return 5.1
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeGlobalVariables) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	globalVariablesRows, err := db.Query(globalVariablesQuery)
@@ -120,3 +125,6 @@ func validPrometheusName(s string) string {
 	s = strings.ToLower(s)
 	return s
 }
+
+// check interface
+var _ Scraper = ScrapeGlobalVariables{}

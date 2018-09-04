@@ -147,6 +147,11 @@ func (ScrapePerfEventsStatements) Help() string {
 	return "Collect metrics from performance_schema.events_statements_summary_by_digest"
 }
 
+// Version of MySQL from which scraper is available.
+func (ScrapePerfEventsStatements) Version() float64 {
+	return 5.6
+}
+
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapePerfEventsStatements) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	perfQuery := fmt.Sprintf(
@@ -227,3 +232,6 @@ func (ScrapePerfEventsStatements) Scrape(db *sql.DB, ch chan<- prometheus.Metric
 	}
 	return nil
 }
+
+// check interface
+var _ Scraper = ScrapePerfEventsStatements{}
