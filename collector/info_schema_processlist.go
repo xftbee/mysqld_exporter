@@ -58,10 +58,10 @@ var (
 		"deleting":                  uint32(0),
 		"executing":                 uint32(0),
 		"execution of init_command": uint32(0),
-		"end":                     uint32(0),
-		"freeing items":           uint32(0),
-		"flushing tables":         uint32(0),
-		"fulltext initialization": uint32(0),
+		"end":                       uint32(0),
+		"freeing items":             uint32(0),
+		"flushing tables":           uint32(0),
+		"fulltext initialization":   uint32(0),
 		"idle":                      uint32(0),
 		"init":                      uint32(0),
 		"killed":                    uint32(0),
@@ -96,8 +96,8 @@ var (
 		"other":                     uint32(0),
 	}
 	threadStateMapping = map[string]string{
-		"user sleep":                               "idle",
-		"creating index":                           "altering table",
+		"user sleep":     "idle",
+		"creating index": "altering table",
 		"committing alter table to storage engine": "altering table",
 		"discard or import tablespace":             "altering table",
 		"rename":                                   "altering table",
@@ -117,35 +117,6 @@ var (
 		"deleting from reference tables":           "deleting",
 	}
 )
-
-func deriveThreadState(command string, state string) string {
-	var normCmd = strings.Replace(strings.ToLower(command), "_", " ", -1)
-	var normState = strings.Replace(strings.ToLower(state), "_", " ", -1)
-	// check if it's already a valid state
-	_, knownState := threadStateCounterMap[normState]
-	if knownState {
-		return normState
-	}
-	// check if plain mapping applies
-	mappedState, canMap := threadStateMapping[normState]
-	if canMap {
-		return mappedState
-	}
-	// check special waiting for XYZ lock
-	if strings.Contains(normState, "waiting for") && strings.Contains(normState, "lock") {
-		return "waiting for lock"
-	}
-	if normCmd == "sleep" && normState == "" {
-		return "idle"
-	}
-	if normCmd == "query" {
-		return "executing"
-	}
-	if normCmd == "binlog dump" {
-		return "replication master"
-	}
-	return "other"
-}
 
 // ScrapeProcesslist collects from `information_schema.processlist`.
 type ScrapeProcesslist struct{}
@@ -208,4 +179,33 @@ func (ScrapeProcesslist) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	}
 
 	return nil
+}
+
+func deriveThreadState(command string, state string) string {
+	var normCmd = strings.Replace(strings.ToLower(command), "_", " ", -1)
+	var normState = strings.Replace(strings.ToLower(state), "_", " ", -1)
+	// check if it's already a valid state
+	_, knownState := threadStateCounterMap[normState]
+	if knownState {
+		return normState
+	}
+	// check if plain mapping applies
+	mappedState, canMap := threadStateMapping[normState]
+	if canMap {
+		return mappedState
+	}
+	// check special waiting for XYZ lock
+	if strings.Contains(normState, "waiting for") && strings.Contains(normState, "lock") {
+		return "waiting for lock"
+	}
+	if normCmd == "sleep" && normState == "" {
+		return "idle"
+	}
+	if normCmd == "query" {
+		return "executing"
+	}
+	if normCmd == "binlog dump" {
+		return "replication master"
+	}
+	return "other"
 }
