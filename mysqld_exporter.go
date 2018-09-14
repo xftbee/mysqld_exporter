@@ -139,6 +139,7 @@ var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeHeartbeat{}:                   false,
 	collector.ScrapeInnodbCmp{}:                   false,
 	collector.ScrapeInnodbCmpMem{}:                false,
+	collector.ScrapeCustomQuery{}:                 false,
 }
 
 var scrapersHr = map[collector.Scraper]struct{}{
@@ -173,6 +174,7 @@ var scrapersLr = map[collector.Scraper]struct{}{
 	collector.ScrapeInfoSchemaInnodbTablespaces{}: {},
 	collector.ScrapeEngineTokudbStatus{}:          {},
 	collector.ScrapeHeartbeat{}:                   {},
+	collector.ScrapeCustomQuery{}:                 {},
 }
 
 func parseMycnf(config interface{}) (string, error) {

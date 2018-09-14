@@ -69,4 +69,20 @@ promu:
 		$(GO) get -u github.com/prometheus/promu
 
 
+do:
+	GOOS=linux go build mysqld_exporter.go && \
+	     docker exec pmm-client-mysql pmm-admin stop --all && \
+	     docker cp mysqld_exporter pmm-client-mysql:/usr/local/percona/pmm-client/mysqld_exporter && \
+	     docker exec -e DATA_SOURCE_NAME="root:@/" pmm-client-mysql pmm-admin start --all && \
+		 docker exec pmm-client-mysql pmm-admin list
+
+
+# pmm-admin add mysql:metrics MySQL57 -- -collect.custom_query=true -queries-file-name=/usr/local/percona/pmm-client/queries-mysqld.yml
+
+exec:
+	GOOS=linux go build mysqld_exporter.go && \
+	docker cp mysqld_exporter pmm-client-mysql:/usr/local/percona/pmm-client/mysqld_exporter && \
+	docker exec -e DATA_SOURCE_NAME="root:@/" pmm-client-mysql /usr/local/percona/pmm-client/mysqld_exporter -web.listen-address=172.19.0.4:42022 -web.auth-file=/usr/local/percona/pmm-client/pmm.yml -web.ssl-key-file=/usr/local/percona/pmm-client/server.key -web.ssl-cert-file=/usr/local/percona/pmm-client/server.crt -collect.auto_increment.columns=true -collect.binlog_size=true -collect.global_status=true -collect.global_variables=true -collect.info_schema.innodb_metrics=true -collect.info_schema.innodb_cmp=true -collect.info_schema.innodb_cmpmem=true -collect.info_schema.processlist=true -collect.info_schema.query_response_time=true -collect.info_schema.tables=true -collect.info_schema.tablestats=true -collect.info_schema.userstats=true -collect.perf_schema.eventswaits=true -collect.perf_schema.file_events=true -collect.perf_schema.indexiowaits=true -collect.perf_schema.tableiowaits=true -collect.perf_schema.tablelocks=true -collect.slave_status=true -collect.custom_query=true -queries-file-name=/usr/local/percona/pmm-client/queries-mysqld.yml
+
+
 .PHONY: all style format build test vet tarball docker promu
