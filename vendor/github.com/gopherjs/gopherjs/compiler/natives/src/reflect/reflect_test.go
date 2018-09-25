@@ -178,8 +178,3 @@ func TestIssue22073(t *testing.T) {
 func TestCallReturnsEmpty(t *testing.T) {
 	t.Skip("test uses runtime.SetFinalizer, which is not supported by GopherJS")
 }
-
-func init() {
-	// TODO: This is a failure in 1.11, try to determine the cause and fix.
-	typeTests = append(typeTests[:31], typeTests[32:]...) // skip test case #31
-}

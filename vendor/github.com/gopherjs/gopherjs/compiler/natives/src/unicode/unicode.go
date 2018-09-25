@@ -2,9 +2,9 @@
 
 package unicode
 
-func to(_case int, r rune, caseRange []CaseRange) (mappedRune rune, foundMapping bool) {
+func to(_case int, r rune, caseRange []CaseRange) rune {
 	if _case < 0 || MaxCase <= _case {
-		return ReplacementChar, false
+		return ReplacementChar
 	}
 	lo := 0
 	hi := len(caseRange)
@@ -14,9 +14,9 @@ func to(_case int, r rune, caseRange []CaseRange) (mappedRune rune, foundMapping
 		if rune(cr.Lo) <= r && r <= rune(cr.Hi) {
 			delta := rune(cr.Delta[_case])
 			if delta > MaxRune {
-				return rune(cr.Lo) + ((r-rune(cr.Lo))&^1 | rune(_case&1)), true
+				return rune(cr.Lo) + ((r-rune(cr.Lo))&^1 | rune(_case&1))
 			}
-			return r + delta, true
+			return r + delta
 		}
 		if r < rune(cr.Lo) {
 			hi = m
@@ -24,5 +24,5 @@ func to(_case int, r rune, caseRange []CaseRange) (mappedRune rune, foundMapping
 			lo = m + 1
 		}
 	}
-	return r, false
+	return r
 }

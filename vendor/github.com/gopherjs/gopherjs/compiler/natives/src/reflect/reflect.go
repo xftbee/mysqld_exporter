@@ -53,34 +53,17 @@ func reflectType(typ *js.Object) *rtype {
 			if typ.Get("named").Bool() {
 				rt.tflag |= tflagNamed
 			}
-			var reflectMethods []method
-			for i := 0; i < methodSet.Length(); i++ { // Exported methods first.
+			reflectMethods := make([]method, methodSet.Length())
+			for i := range reflectMethods {
 				m := methodSet.Index(i)
-				exported := internalStr(m.Get("pkg")) == ""
-				if !exported {
-					continue
-				}
-				reflectMethods = append(reflectMethods, method{
-					name: newNameOff(newName(internalStr(m.Get("name")), "", exported)),
+				reflectMethods[i] = method{
+					name: newNameOff(newName(internalStr(m.Get("name")), "", internalStr(m.Get("pkg")) == "")),
 					mtyp: newTypeOff(reflectType(m.Get("typ"))),
-				})
-			}
-			xcount := uint16(len(reflectMethods))
-			for i := 0; i < methodSet.Length(); i++ { // Unexported methods second.
-				m := methodSet.Index(i)
-				exported := internalStr(m.Get("pkg")) == ""
-				if exported {
-					continue
 				}
-				reflectMethods = append(reflectMethods, method{
-					name: newNameOff(newName(internalStr(m.Get("name")), "", exported)),
-					mtyp: newTypeOff(reflectType(m.Get("typ"))),
-				})
 			}
 			ut := &uncommonType{
 				pkgPath:  newNameOff(newName(internalStr(typ.Get("pkg")), "", false)),
 				mcount:   uint16(methodSet.Length()),
-				xcount:   xcount,
 				_methods: reflectMethods,
 			}
 			uncommonTypeMap[rt] = ut
@@ -160,14 +143,14 @@ func reflectType(typ *js.Object) *rtype {
 			reflectFields := make([]structField, fields.Length())
 			for i := range reflectFields {
 				f := fields.Index(i)
-				offsetEmbed := uintptr(i) << 1
-				if f.Get("embedded").Bool() {
-					offsetEmbed |= 1
+				offsetAnon := uintptr(i) << 1
+				if f.Get("anonymous").Bool() {
+					offsetAnon |= 1
 				}
 				reflectFields[i] = structField{
-					name:        newName(internalStr(f.Get("name")), internalStr(f.Get("tag")), f.Get("exported").Bool()),
-					typ:         reflectType(f.Get("typ")),
-					offsetEmbed: offsetEmbed,
+					name:       newName(internalStr(f.Get("name")), internalStr(f.Get("tag")), f.Get("exported").Bool()),
+					typ:        reflectType(f.Get("typ")),
+					offsetAnon: offsetAnon,
 				}
 			}
 			setKindType(rt, &structType{
@@ -189,18 +172,15 @@ func setKindType(rt *rtype, kindType interface{}) {
 type uncommonType struct {
 	pkgPath nameOff
 	mcount  uint16
-	xcount  uint16
+	_       uint16
 	moff    uint32
+	_       uint32
 
 	_methods []method
 }
 
 func (t *uncommonType) methods() []method {
 	return t._methods
-}
-
-func (t *uncommonType) exportedMethods() []method {
-	return t._methods[:t.xcount:t.xcount]
 }
 
 var uncommonTypeMap = make(map[*rtype]*uncommonType)
@@ -1013,7 +993,7 @@ func (v Value) Field(i int) Value {
 
 	fl := v.flag&(flagStickyRO|flagIndir|flagAddr) | flag(typ.Kind())
 	if !field.name.isExported() {
-		if field.embedded() {
+		if field.anon() {
 			fl |= flagEmbedRO
 		} else {
 			fl |= flagStickyRO

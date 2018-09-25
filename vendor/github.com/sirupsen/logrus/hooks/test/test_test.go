@@ -1,10 +1,8 @@
 package test
 
 import (
-	"math/rand"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -40,33 +38,23 @@ func TestAllHooks(t *testing.T) {
 }
 
 func TestLoggingWithHooksRace(t *testing.T) {
-
-	rand.Seed(time.Now().Unix())
-	unlocker := rand.Int() % 100
-
 	assert := assert.New(t)
 	logger, hook := NewNullLogger()
 
-	var wgOne, wgAll sync.WaitGroup
-	wgOne.Add(1)
-	wgAll.Add(100)
+	var wg sync.WaitGroup
+	wg.Add(100)
 
 	for i := 0; i < 100; i++ {
-		go func(i int) {
+		go func() {
 			logger.Info("info")
-			wgAll.Done()
-			if i == unlocker {
-				wgOne.Done()
-			}
-		}(i)
+			wg.Done()
+		}()
 	}
-
-	wgOne.Wait()
 
 	assert.Equal(logrus.InfoLevel, hook.LastEntry().Level)
 	assert.Equal("info", hook.LastEntry().Message)
 
-	wgAll.Wait()
+	wg.Wait()
 
 	entries := hook.AllEntries()
 	assert.Equal(100, len(entries))
