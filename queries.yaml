@@ -11,12 +11,3 @@ mysql_performance_schema:
         usage: "GAUGE"
         description: "High Water Mark of Memory allocated to the Event"
 
-experiment_garden:
-  query: "SELECT fruit, amount FROM experiment.garden;"
-  metrics:
-    - fruit:
-        usage: "LABEL"
-        description: "Fruit names"
-    - amount:
-        usage: "COUNTER"
-        description: "Amount fruits in the garden"
