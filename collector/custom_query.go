@@ -22,11 +22,6 @@ import (
 	"github.com/prometheus/common/log"
 )
 
-const (
-	customQuery     = "customQuery"
-	staticLabelName = "static"
-)
-
 // nolint: golint
 const (
 	DISCARD      ColumnUsage = iota // Ignore this column
@@ -105,13 +100,13 @@ func (scq ScrapeCustomQuery) Scrape(ctx context.Context, db *sql.DB, ch chan<- p
 	userQueriesData, err := ioutil.ReadFile(*userQueriesPath)
 	if err != nil {
 		return fmt.Errorf("failed to open custom queries:%s", err.Error())
-	} else {
-		cq.mappingMtx.Lock()
-		err := addQueries(userQueriesData, cq.CustomMetricMap, cq.CustomQueryMap)
-		cq.mappingMtx.Unlock()
-		if err != nil {
-			return fmt.Errorf("failed to add custom queries:%s", err)
-		}
+	}
+
+	cq.mappingMtx.Lock()
+	err = addQueries(userQueriesData, cq.CustomMetricMap, cq.CustomQueryMap)
+	cq.mappingMtx.Unlock()
+	if err != nil {
+		return fmt.Errorf("failed to add custom queries:%s", err)
 	}
 
 	cq.mappingMtx.RLock()

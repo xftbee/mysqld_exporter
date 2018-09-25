@@ -33,7 +33,10 @@ func TestScrapeCustomQueriesCounter(t *testing.T) {
 		tmpFileName := createTmpFile(t, customQueryCounter)
 		defer os.Remove(tmpFileName)
 
-		flag.Set("queries-file-name", tmpFileName)
+		err := flag.Set("queries-file-name", tmpFileName)
+		if err != nil {
+			t.Fatalf("cannot set flag: %s", err)
+		}
 		flag.Parse()
 		db, mock, err := sqlmock.New()
 		if err != nil {
@@ -96,7 +99,10 @@ func TestScrapeCustomQueriesDuration(t *testing.T) {
 		tmpFileName := createTmpFile(t, customQueryDuration)
 		defer os.Remove(tmpFileName)
 
-		flag.Set("queries-file-name", tmpFileName)
+		err := flag.Set("queries-file-name", tmpFileName)
+		if err != nil {
+			t.Fatalf("cannot set flag: %s", err)
+		}
 		flag.Parse()
 		db, mock, err := sqlmock.New()
 		if err != nil {
@@ -156,10 +162,13 @@ experiment_garden:
 func TestScrapeCustomQueriesDbError(t *testing.T) {
 	convey.Convey("Custom queries db error", t, func() {
 
-		tmpFileName := createTmpFile(t, customQueryDuration)
+		tmpFileName := createTmpFile(t, customQueryNoDb)
 		defer os.Remove(tmpFileName)
 
-		flag.Set("queries-file-name", tmpFileName)
+		err := flag.Set("queries-file-name", tmpFileName)
+		if err != nil {
+			t.Fatalf("cannot set flag: %s", err)
+		}
 		flag.Parse()
 		db, mock, err := sqlmock.New()
 		if err != nil {
@@ -173,7 +182,7 @@ func TestScrapeCustomQueriesDbError(t *testing.T) {
 
 		convey.Convey("Should raise error ", func() {
 			err = (ScrapeCustomQuery{}).Scrape(context.Background(), db, ch)
-			convey.So(err, convey.ShouldBeError, "experiment_garden:Error running query on database:  experiment_garden Query 'SELECT fruit, ripen FROM experiment.garden;', does not match regex [SELECT fruit, ripen FROM non_existed_experiment.garden;]\n")
+			convey.So(err, convey.ShouldBeError, "experiment_garden:Error running query on database:  experiment_garden ERROR 1049 (42000): Unknown database 'non_existed_experiment'\n")
 		})
 		close(ch)
 	})
@@ -189,7 +198,10 @@ func TestScrapeCustomQueriesIncorrectYaml(t *testing.T) {
 		tmpFileName := createTmpFile(t, customQueryIncorrectYaml)
 		defer os.Remove(tmpFileName)
 
-		flag.Set("queries-file-name", tmpFileName)
+		err := flag.Set("queries-file-name", tmpFileName)
+		if err != nil {
+			t.Fatalf("cannot set flag: %s", err)
+		}
 		flag.Parse()
 		db, _, err := sqlmock.New()
 		if err != nil {
@@ -210,7 +222,10 @@ func TestScrapeCustomQueriesIncorrectYaml(t *testing.T) {
 
 func TestScrapeCustomQueriesNoFile(t *testing.T) {
 	convey.Convey("Passed as a custom queries unexisted file or path", t, func() {
-		flag.Set("queries-file-name", "/wrong/path/custom_query_test.yaml")
+		err := flag.Set("queries-file-name", "/wrong/path/custom_query_test.yaml")
+		if err != nil {
+			t.Fatalf("cannot set flag: %s", err)
+		}
 		flag.Parse()
 		db, _, err := sqlmock.New()
 		if err != nil {
