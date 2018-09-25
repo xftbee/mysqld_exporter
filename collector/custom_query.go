@@ -3,12 +3,14 @@
 package collector
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"errors"
@@ -40,10 +42,6 @@ var (
 		"queries-file-name", "/usr/local/percona/pmm-client/queries-mysqld.yml", // default path
 		"Path to custom queries file.",
 	)
-
-	customMetricMap = make(map[string]MetricMapNamespace)
-	customQueryMap  = make(map[string]string)
-	customQueries   = map[string][]CustomQuery{}
 )
 
 // ColumnUsage should be one of several enum values which describe how a
@@ -74,7 +72,9 @@ type MetricMap struct {
 
 // CustomQuery - contains MySQL query parsed from YAML file.
 type CustomQuery struct {
-	query string
+	CustomMetricMap map[string]MetricMapNamespace
+	CustomQueryMap  map[string]string
+	mappingMtx      sync.RWMutex
 }
 
 // ScrapeCustomQuery colects the metrics from custom queries.
@@ -96,18 +96,27 @@ func (scq ScrapeCustomQuery) Version() float64 {
 }
 
 // Scrape collects data.
-func (scq ScrapeCustomQuery) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
+func (scq ScrapeCustomQuery) Scrape(ctx context.Context, db *sql.DB, ch chan<- prometheus.Metric) error {
 
+	cq := CustomQuery{
+		CustomMetricMap: make(map[string]MetricMapNamespace),
+		CustomQueryMap:  make(map[string]string),
+	}
 	userQueriesData, err := ioutil.ReadFile(*userQueriesPath)
 	if err != nil {
 		return fmt.Errorf("failed to open custom queries:%s", err.Error())
 	} else {
-		if err := addQueries(userQueriesData, customMetricMap, customQueryMap); err != nil {
+		cq.mappingMtx.Lock()
+		err := addQueries(userQueriesData, cq.CustomMetricMap, cq.CustomQueryMap)
+		cq.mappingMtx.Unlock()
+		if err != nil {
 			return fmt.Errorf("failed to add custom queries:%s", err)
 		}
 	}
 
-	errMap := queryNamespaceMappings(ch, db, customMetricMap, customQueryMap)
+	cq.mappingMtx.RLock()
+	defer cq.mappingMtx.RUnlock()
+	errMap := queryNamespaceMappings(ctx, ch, db, cq.CustomMetricMap, cq.CustomQueryMap)
 	if len(errMap) > 0 {
 		errs := []string{}
 		for k, v := range errMap {
@@ -420,7 +429,7 @@ func dbToString(t interface{}) (string, bool) {
 
 // Query within a namespace mapping and emit metrics. Returns fatal errors if
 // the scrape fails, and a slice of errors if they were non-fatal.
-func queryNamespaceMapping(ch chan<- prometheus.Metric, db *sql.DB, namespace string, mapping MetricMapNamespace, customQueries map[string]string) ([]error, error) {
+func queryNamespaceMapping(ctx context.Context, ch chan<- prometheus.Metric, db *sql.DB, namespace string, mapping MetricMapNamespace, customQueries map[string]string) ([]error, error) {
 	// Check for a query override for this namespace
 	query, found := customQueries[namespace]
 
@@ -438,9 +447,9 @@ func queryNamespaceMapping(ch chan<- prometheus.Metric, db *sql.DB, namespace st
 	if !found {
 		// I've no idea how to avoid this properly at the moment, but this is
 		// an admin tool so you're not injecting SQL right?
-		rows, err = db.Query(fmt.Sprintf("SELECT * FROM %s;", namespace)) // nolint: gas, safesql
+		rows, err = db.QueryContext(ctx, fmt.Sprintf("SELECT * FROM %s;", namespace)) // nolint: gas, safesql
 	} else {
-		rows, err = db.Query(query)
+		rows, err = db.QueryContext(ctx, query)
 	}
 	if err != nil {
 		return []error{}, errors.New(fmt.Sprintln("Error running query on database: ", namespace, err))
@@ -520,16 +529,15 @@ func queryNamespaceMapping(ch chan<- prometheus.Metric, db *sql.DB, namespace st
 
 // Iterate through all the namespace mappings in the exporter and run their
 // queries.
-func queryNamespaceMappings(ch chan<- prometheus.Metric, db *sql.DB, metricMap map[string]MetricMapNamespace, customQueries map[string]string) map[string]error {
+func queryNamespaceMappings(ctx context.Context, ch chan<- prometheus.Metric, db *sql.DB, metricMap map[string]MetricMapNamespace, customQueries map[string]string) map[string]error {
 	// Return a map of namespace -> errors
 	namespaceErrors := make(map[string]error)
 
 	for namespace, mapping := range metricMap {
-		nonFatalErrors, err := queryNamespaceMapping(ch, db, namespace, mapping, customQueries)
+		nonFatalErrors, err := queryNamespaceMapping(ctx, ch, db, namespace, mapping, customQueries)
 		// Serious error - a namespace disappeared
 		if err != nil {
 			namespaceErrors[namespace] = err
-			log.Infoln(err)
 		}
 		// Non-serious errors - likely version or parsing problems.
 		if len(nonFatalErrors) > 0 {

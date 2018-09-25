@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -50,7 +51,7 @@ func TestScrapeCustomQueriesCounter(t *testing.T) {
 
 		ch := make(chan prometheus.Metric)
 		go func() {
-			if err = (ScrapeCustomQuery{}).Scrape(db, ch); err != nil {
+			if err = (ScrapeCustomQuery{}).Scrape(context.Background(), db, ch); err != nil {
 				t.Errorf("error calling function on test: %s", err)
 			}
 			close(ch)
@@ -113,7 +114,7 @@ func TestScrapeCustomQueriesDuration(t *testing.T) {
 
 		ch := make(chan prometheus.Metric)
 		go func() {
-			if err = (ScrapeCustomQuery{}).Scrape(db, ch); err != nil {
+			if err = (ScrapeCustomQuery{}).Scrape(context.Background(), db, ch); err != nil {
 				t.Errorf("error calling function on test: %s", err)
 			}
 			close(ch)
@@ -171,7 +172,7 @@ func TestScrapeCustomQueriesDbError(t *testing.T) {
 		ch := make(chan prometheus.Metric)
 
 		convey.Convey("Should raise error ", func() {
-			err = (ScrapeCustomQuery{}).Scrape(db, ch)
+			err = (ScrapeCustomQuery{}).Scrape(context.Background(), db, ch)
 			convey.So(err, convey.ShouldBeError, "experiment_garden:Error running query on database:  experiment_garden Query 'SELECT fruit, ripen FROM experiment.garden;', does not match regex [SELECT fruit, ripen FROM non_existed_experiment.garden;]\n")
 		})
 		close(ch)
@@ -199,7 +200,7 @@ func TestScrapeCustomQueriesIncorrectYaml(t *testing.T) {
 		ch := make(chan prometheus.Metric)
 
 		convey.Convey("Should raise error ", func() {
-			err = (ScrapeCustomQuery{}).Scrape(db, ch)
+			err = (ScrapeCustomQuery{}).Scrape(context.Background(), db, ch)
 			convey.So(err, convey.ShouldBeError, "failed to add custom queries:incorrect yaml format for bar")
 		})
 		close(ch)
@@ -216,7 +217,7 @@ func TestScrapeCustomQueriesNoFile(t *testing.T) {
 			t.Fatalf("error opening a stub database connection: %s", err)
 		}
 		ch := make(chan prometheus.Metric)
-		err = (ScrapeCustomQuery{}).Scrape(db, ch)
+		err = (ScrapeCustomQuery{}).Scrape(context.Background(), db, ch)
 		close(ch)
 		convey.So(err, convey.ShouldBeError, "failed to open custom queries:open /wrong/path/custom_query_test.yaml: no such file or directory")
 	})
