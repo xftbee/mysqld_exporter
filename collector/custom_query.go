@@ -151,7 +151,6 @@ func addQueries(content []byte, exporterMap map[string]MetricMapNamespace, custo
 	}
 	// Stores the loaded map representation.
 	metricMaps := make(map[string]map[string]ColumnMapping)
-	newQueryOverrides := make(map[string]string)
 	for metric, specs := range extra {
 		log.Debugln("New user metric namespace from YAML:", metric)
 		specMap, ok := specs.(map[interface{}]interface{})
@@ -162,7 +161,7 @@ func addQueries(content []byte, exporterMap map[string]MetricMapNamespace, custo
 			switch key.(string) {
 			case "query":
 				query := value.(string)
-				newQueryOverrides[metric] = query
+				customQueryMap[metric] = query
 
 			case "metrics":
 				for _, c := range value.([]interface{}) {
@@ -201,22 +200,13 @@ func addQueries(content []byte, exporterMap map[string]MetricMapNamespace, custo
 	}
 
 	// Convert the loaded metric map into exporter representation.
-	partialExporterMap := makeDescMap(metricMaps)
 	// Merge the two maps (which are now quite flatteend).
-	for k, v := range partialExporterMap {
-		exporterMap[k] = v
-	}
-
-	// Merge the query override map.
-	for k, v := range newQueryOverrides {
-		customQueryMap[k] = v
-	}
-
+	makeDescMap(metricMaps, exporterMap)
 	return nil
 }
 
 // Turn the MetricMap column mapping into a prometheus descriptor mapping.
-func makeDescMap(metricMaps map[string]map[string]ColumnMapping) map[string]MetricMapNamespace {
+func makeDescMap(metricMaps map[string]map[string]ColumnMapping, exporterMap map[string]MetricMapNamespace) {
 	var metricMap = make(map[string]MetricMapNamespace)
 	for namespace, mappings := range metricMaps {
 		thisMap := make(map[string]MetricMap)
@@ -307,9 +297,8 @@ func makeDescMap(metricMaps map[string]map[string]ColumnMapping) map[string]Metr
 		}
 
 		metricMap[namespace] = MetricMapNamespace{constLabels, thisMap}
+		exporterMap[namespace] = MetricMapNamespace{constLabels, thisMap}
 	}
-
-	return metricMap
 }
 
 // stringToColumnUsage converts a string to the corresponding ColumnUsage.
@@ -392,20 +381,18 @@ func queryNamespaceMapping(ctx context.Context, ch chan<- prometheus.Metric,
 	customQueries map[string]string) ([]error, error) {
 	// Check for a query override for this namespace.
 	query, found := customQueries[namespace]
+
+	if !found {
+		return nil, fmt.Errorf("query not found for namespace: %s", namespace)
+	}
+
 	// Was this query disabled (i.e. nothing sensible can be queried on cu version of MySQL?
-	if query == "" && found {
+	if query == "" {
 		// Return success (no pertinent data).
 		return nil, nil
 	}
 
-	// Don't fail on a bad scrape of one metric.
-	var rows *sql.Rows
-	var err error
-	if !found {
-		query = fmt.Sprintf("SELECT * FROM %#q;", namespace)
-	}
-	rows, err = db.QueryContext(ctx, query)
-
+	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("error running query on database: %s, %s", namespace, err)
 	}
