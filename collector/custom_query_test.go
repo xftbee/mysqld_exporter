@@ -176,13 +176,15 @@ func TestScrapeCustomQueriesDbError(t *testing.T) {
 		}
 		defer db.Close()
 
-		mock.ExpectQuery(sanitizeQuery("SELECT fruit, ripen FROM non_existed_experiment.garden;")).WillReturnError(fmt.Errorf("ERROR 1049 (42000): Unknown database 'non_existed_experiment'"))
+		expectedError := fmt.Errorf("ERROR 1049 (42000): Unknown database 'non_existed_experiment'")
+		mock.ExpectQuery(sanitizeQuery("SELECT fruit, ripen FROM non_existed_experiment.garden;")).WillReturnError(expectedError)
 
 		ch := make(chan prometheus.Metric)
 
+		expectedErr := "experiment_garden:error running query on database: experiment_garden, ERROR 1049 (42000): Unknown database 'non_existed_experiment'"
 		convey.Convey("Should raise error ", func() {
 			err = (ScrapeCustomQuery{}).Scrape(context.Background(), db, ch)
-			convey.So(err, convey.ShouldBeError, "experiment_garden:Error running query on database:  experiment_garden ERROR 1049 (42000): Unknown database 'non_existed_experiment'\n")
+			convey.So(err, convey.ShouldBeError, expectedErr)
 		})
 		close(ch)
 	})
