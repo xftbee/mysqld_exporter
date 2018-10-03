@@ -1,0 +1,14 @@
+## Custom query example.
+#mysql_performance_schema: ## Namespace (prefix of metric name) for custom query https://prometheus.io/docs/practices/naming/#metric-names
+#  query: "SELECT event_name, current_count, high_count FROM sys.memory_global_by_current_bytes WHERE current_count > 0;"
+#  metrics: ## List of metrics.
+#    - event_name: ## Alias to be mapped value from query to Prometheus label https://prometheus.io/docs/practices/naming/#labels
+#        usage: "LABEL" ## If usage is LABEL this value will be used as Prometheus dimension.
+#        description: "Performance Schema Event Name"
+#    - current_count: ## Metric name https://prometheus.io/docs/practices/naming/#metric-names
+#        usage: "GAUGE" ## Type of metric  can be one from: COUNTER, GAUGE, MAPPEDMETRIC, DURATION, DISCARD.
+#        description: "Memory currently allocated to the Event"
+#    - high_count:
+#        usage: "GAUGE"
+#        description: "High Water Mark of Memory allocated to the Event" ## Description of metric.
+

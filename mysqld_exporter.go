@@ -145,7 +145,7 @@ var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeHeartbeat{}:                   false,
 	collector.ScrapeInnodbCmp{}:                   false,
 	collector.ScrapeInnodbCmpMem{}:                false,
-	collector.ScrapeCustomQuery{}:                 false,
+	collector.ScrapeCustomQuery{}:                 true,
 }
 
 var scrapersHr = map[collector.Scraper]struct{}{
