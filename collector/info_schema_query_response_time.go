@@ -43,17 +43,17 @@ var (
 
 	infoSchemaQueryResponseTimeTotalDescs = [3]*prometheus.Desc{
 		prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, informationSchema, "query_response_time_total"),
+			prometheus.BuildFQName(namespace, informationSchema, "query_response_time_microseconds_total"),
 			"The total execution time in microseconds of all queries by duration they took to execute.",
 			[]string{}, nil,
 		),
 		prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, informationSchema, "read_query_response_time_total"),
+			prometheus.BuildFQName(namespace, informationSchema, "read_query_response_time_microseconds_total"),
 			"The total execution time in microseconds of read queries by duration they took to execute.",
 			[]string{}, nil,
 		),
 		prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, informationSchema, "write_query_response_time_total"),
+			prometheus.BuildFQName(namespace, informationSchema, "write_query_response_time_microseconds_total"),
 			"The total execution time in microseconds of write queries by duration they took to execute.",
 			[]string{}, nil,
 		),
